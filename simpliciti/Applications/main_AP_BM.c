@@ -152,7 +152,8 @@ void simpliciti_main(void)
         if (len == 4)
         {
           BSP_TOGGLE_LED1();
-          memcpy(simpliciti_data, ed_data, 4);
+          simpliciti_data[0] = 4;
+          memcpy(simpliciti_data + 1, ed_data, 4);
           setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);
         }        
         // Sync packets are either R2R (2 byte) or data (19 byte) long
@@ -196,6 +197,17 @@ void simpliciti_main(void)
                                     break;
 
           }
+        }
+        else
+        {
+        	if (len > 4 && len <= SIMPLICITI_MAX_PAYLOAD_LENGTH)
+        	{
+        		BSP_TOGGLE_LED1();
+        		uint8_t realLength = (len >= SIMPLICITI_MAX_PAYLOAD_LENGTH ? SIMPLICITI_MAX_PAYLOAD_LENGTH - 1 : len);
+        		simpliciti_data[0] = realLength;
+        		memcpy(simpliciti_data + 1, ed_data, realLength);
+        		setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);
+        	}
         }
       }
     }

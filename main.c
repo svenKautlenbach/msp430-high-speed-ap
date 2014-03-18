@@ -143,6 +143,8 @@ void main (void)
     USB_handleVbusOnEvent();
   }
 
+  LED_ON;
+
   while (1)
   {
 

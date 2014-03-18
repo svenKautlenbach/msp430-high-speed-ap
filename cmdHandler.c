@@ -189,10 +189,11 @@ void usb_decode(void)
                               if (getFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA))
                               {
                                 // Assemble IN packet (ID/BTN, DataX, DataY, DataZ)
-                            	usb_buffer[PACKET_BYTE_FIRST_DATA + 3] = simpliciti_data[3];
+                            	/*usb_buffer[PACKET_BYTE_FIRST_DATA + 3] = simpliciti_data[3];
                             	usb_buffer[PACKET_BYTE_FIRST_DATA + 2] = simpliciti_data[2];
                             	usb_buffer[PACKET_BYTE_FIRST_DATA + 1] = simpliciti_data[1];
-                            	usb_buffer[PACKET_BYTE_FIRST_DATA]     = simpliciti_data[0];
+                            	usb_buffer[PACKET_BYTE_FIRST_DATA]     = simpliciti_data[0];*/
+                            	memcpy(usb_buffer + PACKET_BYTE_FIRST_DATA, simpliciti_data + 1, simpliciti_data[0]);
                                 // Mark buffer as already read
                                 simpliciti_data[0] = 0xFF;
                                 clearFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);
