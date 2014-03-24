@@ -194,6 +194,7 @@ void usb_decode(void)
                             	usb_buffer[PACKET_BYTE_FIRST_DATA + 1] = simpliciti_data[1];
                             	usb_buffer[PACKET_BYTE_FIRST_DATA]     = simpliciti_data[0];*/
                             	memcpy(usb_buffer + PACKET_BYTE_FIRST_DATA, simpliciti_data + 1, simpliciti_data[0]);
+                            	usb_buffer[PACKET_BYTE_SIZE] = simpliciti_data[0] + 3;
                                 // Mark buffer as already read
                                 simpliciti_data[0] = 0xFF;
                                 clearFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);

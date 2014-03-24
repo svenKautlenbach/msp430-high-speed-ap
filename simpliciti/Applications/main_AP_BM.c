@@ -202,7 +202,6 @@ void simpliciti_main(void)
         {
         	if (len > 4 && len <= SIMPLICITI_MAX_PAYLOAD_LENGTH)
         	{
-        		BSP_TOGGLE_LED1();
         		uint8_t realLength = (len >= SIMPLICITI_MAX_PAYLOAD_LENGTH ? SIMPLICITI_MAX_PAYLOAD_LENGTH - 1 : len);
         		simpliciti_data[0] = realLength;
         		memcpy(simpliciti_data + 1, ed_data, realLength);

@@ -256,7 +256,7 @@ void USB_Handler_v(void)
               case kUSBCDC_busNotAvailable:
                 break;
               default:
-                break;;
+                break;
             }
             usb_sendack = 0;
             // Enable interrupts
