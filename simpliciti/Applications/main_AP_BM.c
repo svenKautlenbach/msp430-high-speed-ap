@@ -88,6 +88,8 @@ volatile unsigned char simpliciti_flag;
 unsigned char simpliciti_data[SIMPLICITI_MAX_PAYLOAD_LENGTH];
 unsigned char ed_data[SIMPLICITI_MAX_PAYLOAD_LENGTH];
 
+void justSendTheFuckingDataViaUsb(uint8_t* buffer, uint8_t length);
+
 // AP main routine
 void simpliciti_main(void)
 {
@@ -202,10 +204,11 @@ void simpliciti_main(void)
         {
         	if (len > 4 && len <= SIMPLICITI_MAX_PAYLOAD_LENGTH)
         	{
-        		uint8_t realLength = (len >= SIMPLICITI_MAX_PAYLOAD_LENGTH ? SIMPLICITI_MAX_PAYLOAD_LENGTH - 1 : len);
-        		simpliciti_data[0] = realLength;
+        		BSP_TOGGLE_LED1();
+        		justSendTheFuckingDataViaUsb(ed_data, len);
+        		/*simpliciti_data[0] = realLength;
         		memcpy(simpliciti_data + 1, ed_data, realLength);
-        		setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);
+        		setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);*/
         	}
         }
       }

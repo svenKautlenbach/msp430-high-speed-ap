@@ -44,7 +44,7 @@
 extern void simpliciti_main(void);
 
 // Maximum data length
-#define SIMPLICITI_MAX_PAYLOAD_LENGTH       	    (32u)
+#define SIMPLICITI_MAX_PAYLOAD_LENGTH       	    (50u)
 
 // Data to send / receive 
 extern unsigned char simpliciti_data[SIMPLICITI_MAX_PAYLOAD_LENGTH];

@@ -26,7 +26,7 @@ extern "C" {
 // Defines section
 
 #define USB_MIN_MESSAGE_LENGTH        (3u)
-#define USB_MAX_MESSAGE_LENGTH        (32u)
+#define USB_MAX_MESSAGE_LENGTH        (100u)
 
 
 // *************************************************************************************************

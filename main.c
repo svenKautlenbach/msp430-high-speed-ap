@@ -273,6 +273,39 @@ void USB_Handler_v(void)
 
 }
 
+void justSendTheFuckingDataViaUsb(uint8_t* buffer, uint8_t length)
+{
+	memcpy(usb_buffer + PACKET_BYTE_FIRST_DATA, buffer, length);
+	usb_buffer[PACKET_BYTE_SIZE] = length + 3;
+
+	WORD lamp1, lamp2;
+	while(1)
+	{
+		if ((USBCDC_intfStatus(0, &lamp1, &lamp2) & kUSBCDC_waitingForSend) == 0)
+		{ //we can send
+		  // Disable interrupts
+		  __disable_interrupt();
+
+		  switch (USBCDC_sendData(usb_buffer, usb_buffer[2], 0))
+		  {
+			case kUSBCDC_sendStarted:
+			  break;
+			case kUSBCDC_busNotAvailable:
+			  break;
+			default:
+			  break;
+		  }
+		  // Enable interrupts
+		  __enable_interrupt();
+		  break;
+		}
+		else
+		{
+			continue;
+		}
+	}
+}
+
 // *************************************************************************************************
 // Init clock system
 // *************************************************************************************************
