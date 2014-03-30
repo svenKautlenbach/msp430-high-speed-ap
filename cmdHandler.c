@@ -246,6 +246,7 @@ void usb_decode(void)
     // SimpliciTI shared commands
     case BM_STOP_SIMPLICITI:  // Stop through remote control
                               setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_STOP);
+                              BSP_TURN_ON_LED1();
                               break;
 
 
