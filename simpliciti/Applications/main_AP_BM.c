@@ -78,6 +78,7 @@ extern uint8_t sInit_done;
 
 /* reserve space for the maximum possible peer Link IDs */
 static linkID_t linkID0;
+static linkID_t linkTable[NUM_CONNECTIONS] = {0};
 static uint8_t  sNumCurrentPeers = 0;
 
 /* work loop semaphores */
@@ -120,26 +121,24 @@ void simpliciti_main(void)
 	{
 		// Wait for the Join semaphore to be set by the receipt of a Join frame from a
 		//device that supports an End Device.
-		if (sJoinSem && !sNumCurrentPeers)
+		if (sJoinSem && (sNumCurrentPeers < NUM_CONNECTIONS))
 		{
 			/* listen for a new connection */
 			while (1)
 			{
-				if (SMPL_SUCCESS == SMPL_LinkListen(&linkID0))
+				switch (SMPL_LinkListen(linkTable + sNumCurrentPeers))
 				{
-					// We have a connection
+				case SMPL_SUCCESS:
+					sNumCurrentPeers++;
+
+					BSP_ENTER_CRITICAL_SECTION(intState);
+					sJoinSem--;
+					BSP_EXIT_CRITICAL_SECTION(intState);
 					simpliciti_flag = SIMPLICITI_STATUS_LINKED;
-					BSP_TURN_ON_LED1();
+				default:
 					break;
 				}
-				/* Implement fail-to-link policy here. otherwise, listen again. */
 			}
-
-			sNumCurrentPeers++;
-
-			BSP_ENTER_CRITICAL_SECTION(intState);
-			sJoinSem--;
-			BSP_EXIT_CRITICAL_SECTION(intState);
 		}
 
 		/* Have we received a frame on one of the ED connections?
@@ -147,68 +146,75 @@ void simpliciti_main(void)
 		 */
 		if (sPeerFrameSem)
 		{
-			// Continuously try to receive end device packets
-			if (SMPL_SUCCESS == SMPL_Receive(linkID0, ed_data, &len))
+			uint32_t linkId;
+			for (linkId = 0; linkId < sNumCurrentPeers; linkId++)
 			{
-				// Acceleration / ppt data packets are 4 byte long
-				if (len == 4)
+				// Continuously try to receive end device packets
+				if (SMPL_SUCCESS == SMPL_Receive(linkTable[linkId], ed_data, &len))
 				{
-					BSP_TOGGLE_LED1();
-					simpliciti_data[0] = 4;
-					memcpy(simpliciti_data + 1, ed_data, 4);
-					setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);
-				}
-				// Sync packets are either R2R (2 byte) or data (19 byte) long
-				else if ((len == 2) || (len == 19))
-				{
-					// Indicate received packet
-					BSP_TOGGLE_LED1();
-
-					// Decode end device packet
-					switch (ed_data[0])
-					{
-					case SYNC_ED_TYPE_R2R:
-						// Send reply
-						if (getFlag(simpliciti_flag, SIMPLICITI_TRIGGER_SEND_CMD))
-						{
-							// Clear flag
-							clearFlag(simpliciti_flag, SIMPLICITI_TRIGGER_SEND_CMD);
-							// Command data was set by USB buffer previously
-							len = BM_SYNC_DATA_LENGTH;
-						}
-						else // No command currently available
-						{
-							simpliciti_data[0] = SYNC_AP_CMD_NOP;
-							simpliciti_data[1] = 0x55;
-							len = 2;
-						}
-
-						// Send reply packet to end device
-						SMPL_Send(linkID0, simpliciti_data, len);
-						break;
-
-					case SYNC_ED_TYPE_MEMORY:
-					case SYNC_ED_TYPE_STATUS:
-						// If buffer is empty, copy received end device data to intermediate buffer
-						if (!simpliciti_sync_buffer_status)
-						{
-							for (j=0; j<BM_SYNC_DATA_LENGTH; j++) simpliciti_data[j] = ed_data[j];
-							simpliciti_sync_buffer_status = 1;
-						}
-						// Set buffer status to full
-						break;
-
-					}
-				}
-				else
-				{
-					if (len > 4 && len <= SIMPLICITI_MAX_PAYLOAD_LENGTH)
+					BSP_ENTER_CRITICAL_SECTION(intState);
+			        sPeerFrameSem--;
+			        BSP_EXIT_CRITICAL_SECTION(intState);
+					// Acceleration / ppt data packets are 4 byte long
+					if (len == 4)
 					{
 						BSP_TOGGLE_LED1();
-						justSendTheFuckingDataViaUsb(ed_data, len);
-						/*simpliciti_data[0] = realLength;
+						simpliciti_data[0] = 4;
+						memcpy(simpliciti_data + 1, ed_data, 4);
+						setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);
+					}
+					// Sync packets are either R2R (2 byte) or data (19 byte) long
+					else if ((len == 2) || (len == 19))
+					{
+						// Indicate received packet
+						BSP_TOGGLE_LED1();
+
+						// Decode end device packet
+						switch (ed_data[0])
+						{
+						case SYNC_ED_TYPE_R2R:
+							// Send reply
+							if (getFlag(simpliciti_flag, SIMPLICITI_TRIGGER_SEND_CMD))
+							{
+								// Clear flag
+								clearFlag(simpliciti_flag, SIMPLICITI_TRIGGER_SEND_CMD);
+								// Command data was set by USB buffer previously
+								len = BM_SYNC_DATA_LENGTH;
+							}
+							else // No command currently available
+							{
+								simpliciti_data[0] = SYNC_AP_CMD_NOP;
+								simpliciti_data[1] = 0x55;
+								len = 2;
+							}
+
+							// Send reply packet to end device
+							SMPL_Send(linkTable[linkId], simpliciti_data, len);
+							break;
+
+						case SYNC_ED_TYPE_MEMORY:
+						case SYNC_ED_TYPE_STATUS:
+							// If buffer is empty, copy received end device data to intermediate buffer
+							if (!simpliciti_sync_buffer_status)
+							{
+								for (j=0; j<BM_SYNC_DATA_LENGTH; j++) simpliciti_data[j] = ed_data[j];
+								simpliciti_sync_buffer_status = 1;
+							}
+							// Set buffer status to full
+							break;
+
+						}
+					}
+					else
+					{
+						if (len > 4 && len <= SIMPLICITI_MAX_PAYLOAD_LENGTH)
+						{
+							BSP_TOGGLE_LED1();
+							justSendTheFuckingDataViaUsb(ed_data, len);
+							/*simpliciti_data[0] = realLength;
         		memcpy(simpliciti_data + 1, ed_data, realLength);
         		setFlag(simpliciti_flag, SIMPLICITI_TRIGGER_RECEIVED_DATA);*/
+						}
 					}
 				}
 			}
@@ -220,6 +226,7 @@ void simpliciti_main(void)
 			// Clean up after SimpliciTI and enable restarting the stack
 			MRFI_RxIdle();
 			linkID0 = 0;
+			memset(linkTable, 0x00, NUM_CONNECTIONS);
 			sNumCurrentPeers = 0;
 			sJoinSem = 0;
 			sPeerFrameSem = 0;

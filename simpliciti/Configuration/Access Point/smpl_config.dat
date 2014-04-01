@@ -40,7 +40,7 @@
 # */
 #/*-DNUM_CONNECTIONS=8*/
 #/* [BM] RF access point is limited to 1 end device */
---define=NUM_CONNECTIONS=1
+--define=NUM_CONNECTIONS=8
 
 #/*  ***  Size of low level queues for sent and received frames. Affects RAM usage  ***  */
 #/* AP needs larger input frame queue if it is supporting store-and-forward
