@@ -67,7 +67,7 @@
 # */
 #/*-DTHIS_DEVICE_ADDRESS="{0x78, 0x56, 0x34, 0x12}"*/
 #/* [BM] Use a slightly different device address */
---define=THIS_DEVICE_ADDRESS="{0x78, 0x56, 0x34, 0x10}"
+--define=THIS_DEVICE_ADDRESS="{0x53, 0x48, 0x4D, 0x41}"
 
 #/* device type */
 --define=ACCESS_POINT
