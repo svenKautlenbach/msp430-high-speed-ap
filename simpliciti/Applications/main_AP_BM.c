@@ -126,16 +126,16 @@ void simpliciti_main(void)
 			/* listen for a new connection */
 			while (1)
 			{
-				switch (SMPL_LinkListen(linkTable + sNumCurrentPeers))
+				if (SMPL_LinkListen(linkTable + sNumCurrentPeers) == SMPL_SUCCESS)
 				{
-				case SMPL_SUCCESS:
 					sNumCurrentPeers++;
 
 					BSP_ENTER_CRITICAL_SECTION(intState);
 					sJoinSem--;
 					BSP_EXIT_CRITICAL_SECTION(intState);
+
 					simpliciti_flag = SIMPLICITI_STATUS_LINKED;
-				default:
+
 					break;
 				}
 			}
