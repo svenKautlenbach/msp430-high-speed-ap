@@ -41,6 +41,8 @@
 #include "simpliciti.h"
 #include "project.h"
 
+#include "cmdHandler.h"
+
 
 // *************************************************************************************************
 // Defines section
@@ -164,6 +166,21 @@ void simpliciti_main(void)
 					continue;
 				}
 
+				// Device wants the synchronization data
+				if (packetLength == 2 && ed_data[1] == SYNC_ED_TYPE_R2R && ed_data[2] == 0xCB)
+				{
+					uint8_t syncTimePacket[5] = {SYNC_AP_CMD_SET_TIME_T, 0xDA, 0x11, 0x43, 0x53};
+					uint8_t retries = 3;
+					smplStatus_t status = SMPL_NO_ACK;
+					while (retries-- && status == SMPL_NO_ACK)
+					{
+						status = SMPL_SendOpt(linkIdValue, syncTimePacket, 5, SMPL_TXOPTION_ACKREQ);
+					}
+
+					continue;
+				}
+
+				// Everything else just ejaculate out.
 				BSP_TOGGLE_LED1();
 				ed_data[0] = linkIdValue;
 				justSendTheFuckingDataViaUsb(ed_data, packetLength + 1);
