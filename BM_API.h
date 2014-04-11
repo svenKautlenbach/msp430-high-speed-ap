@@ -105,3 +105,7 @@
 #define HW_WBSL_ERROR              (0x0B)
 #define HW_WBSL_STOPPED            (0x0C)
 #define HW_WBSL_LINK_TIMEOUT       (0x0D)
+
+// SHM specific
+#define SHM_SYNC_TIMESTAMP			(0x51)
+#define SHM_TOGGLE_LED				(0x55)

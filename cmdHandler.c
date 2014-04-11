@@ -61,6 +61,8 @@ u8 usb_bufferIndex;
 u8 usb_newdata;
 u8 usb_sendack;
 
+uint8_t g_syncTimestamp[4] = {0xDA, 0x11, 0x43, 0x53}; // Mon, 07 Apr 2014 21:00:10 GMT
+
 u8 HeartRate_u8;   // BlueRobin heartrate to transmit
 u8 Speed_u8;       // BlueRobin speed to transmit
 u16 Distance_u16;  // BlueRobin distance to transmit
@@ -86,6 +88,7 @@ void usb_decode(void)
 	u8 i;
 	uint8_t status = HW_NO_ERROR;
 	uint8_t sendDataBack = 1;
+	uint8_t packetLength = usb_buffer[PACKET_BYTE_SIZE];
 	// Check if start marker is set
 	if (usb_buffer[PACKET_BYTE_START] != 0xFF) return;
 
@@ -388,7 +391,16 @@ void usb_decode(void)
 			}
 		}
 		break;
-	case 0x55:
+	case SHM_SYNC_TIMESTAMP:
+		if (packetLength != 7)
+		{
+			status = HW_ERROR;
+			break;
+		}
+
+		memcpy(g_syncTimestamp, usb_buffer + PACKET_BYTE_FIRST_DATA, 4);
+		break;
+	case SHM_TOGGLE_LED:
 			sendDataBack = 0;
 			BSP_TOGGLE_LED1();
 		break;

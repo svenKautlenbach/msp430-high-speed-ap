@@ -169,7 +169,9 @@ void simpliciti_main(void)
 				// Device wants the synchronization data
 				if (packetLength == 2 && ed_data[1] == SYNC_ED_TYPE_R2R && ed_data[2] == 0xCB)
 				{
-					uint8_t syncTimePacket[5] = {SYNC_AP_CMD_SET_TIME_T, 0xDA, 0x11, 0x43, 0x53};
+					uint8_t syncTimePacket[5];
+					syncTimePacket[0] = SYNC_AP_CMD_SET_TIME_T;
+					memcpy(syncTimePacket + 1, g_syncTimestamp, 4);
 					uint8_t retries = 3;
 					smplStatus_t status = SMPL_NO_ACK;
 					while (retries-- && status == SMPL_NO_ACK)

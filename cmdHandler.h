@@ -34,6 +34,8 @@ extern "C" {
 
 #include "project.h"
 
+#include <stdint.h>
+
 // *************************************************************************************************
 // API section
 
@@ -56,6 +58,8 @@ extern u8 usb_sendack;
 extern u8 HeartRate_u8;   // BlueRobin heartrate to transmit
 extern u8 Speed_u8;       // BlueRobin speed to transmit
 extern u16 Distance_u16;  // BlueRobin distance to transmit
+
+extern uint8_t g_syncTimestamp[4];
 
 #ifdef __cplusplus
 }
