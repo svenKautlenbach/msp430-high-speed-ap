@@ -182,7 +182,7 @@ void simpliciti_main(void)
 					continue;
 				}
 
-				// Everything else just ejaculate out.
+				// Everything else just ejaculate out. Pseudotext for git changes.
 				BSP_TOGGLE_LED1();
 				ed_data[0] = linkIdValue;
 				justSendTheFuckingDataViaUsb(ed_data, packetLength + 1);
