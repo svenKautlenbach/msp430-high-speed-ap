@@ -98,6 +98,7 @@ void simpliciti_main(void)
 {
 	bspIState_t intState;
 	uint32_t led_toggle = 0;
+	uint16_t receivedPackets = 0;
 	uint8_t   pwr;
 
 	// Init variables
@@ -184,6 +185,9 @@ void simpliciti_main(void)
 
 				// Everything else just ejaculate out.
 				BSP_TOGGLE_LED1();
+				receivedPackets++;
+				ed_data[11] = (receivedPackets & 0x00FF);
+				ed_data[12] = ((receivedPackets & 0xFF00) >> 8);
 				ed_data[0] = linkIdValue;
 				justSendTheFuckingDataViaUsb(ed_data, packetLength + 1);
 			}
