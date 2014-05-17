@@ -89,7 +89,9 @@ static volatile uint8_t sJoinSem = 0;
 volatile unsigned char simpliciti_flag;
 unsigned char simpliciti_data[SIMPLICITI_MAX_PAYLOAD_LENGTH];
 // + 1 For link ID.
-unsigned char ed_data[SIMPLICITI_MAX_PAYLOAD_LENGTH + 1];
+unsigned char ed_data[SIMPLICITI_MAX_PAYLOAD_LENGTH + 5]; // Right now additional are link id, raw IO received RX metrics (both added here for the PC), in total 3 plus counter.
+static int8_t sRssi = 0;
+static uint8_t sFcsAndLqi = 0;
 
 void justSendTheFuckingDataViaUsb(uint8_t* buffer, uint8_t length);
 
@@ -153,15 +155,31 @@ void simpliciti_main(void)
 			{
 				uint8_t packetLength;
 				linkID_t linkIdValue = linkTable[linkId];
-				// Continuously try to receive end device packets
-				if (SMPL_SUCCESS != SMPL_Receive(linkIdValue, ed_data + 1, &packetLength))
-				{
-					continue;
-				}
+				ioctlRawReceive_t receiveContext;
+
+				connInfo_t* linkInfo = nwk_getConnInfo(linkIdValue);
+				//TODO: nwk_checkConnInfo should be done also.
+				addr_t addressObject;
+				memcpy(addressObject.addr, linkInfo->peerAddr, 4);
+				receiveContext.addr = &addressObject;
+				receiveContext.port = linkInfo->portRx;
+				receiveContext.msg = ed_data + 5; // link id, counter, counter, rssi, lqi + fcs
+
+				smplStatus_t status;
+				status = SMPL_Ioctl(IOCTL_OBJ_RAW_IO, IOCTL_ACT_READ, (void*)&receiveContext);
+				packetLength = receiveContext.len;
 
 				BSP_ENTER_CRITICAL_SECTION(intState);
 				sPeerFrameSem--;
 				BSP_EXIT_CRITICAL_SECTION(intState);
+
+				uint16_t* receivedPackets = linkId == 0 ? &receivedPacketsNode1 : &receivedPacketsNode2;
+				(*receivedPackets)++;
+
+				if (status != SMPL_SUCCESS)
+				{
+					continue;
+				}
 
 				if (packetLength == 0 || packetLength > SIMPLICITI_MAX_PAYLOAD_LENGTH)
 				{
@@ -169,14 +187,14 @@ void simpliciti_main(void)
 				}
 
 				// Device wants the synchronization data
-				if (packetLength == 2 && ed_data[1] == SYNC_ED_TYPE_R2R && ed_data[2] == 0xCB)
+				if (packetLength == 2 && ed_data[5] == SYNC_ED_TYPE_R2R && ed_data[6] == 0xCB)
 				{
 					uint8_t syncTimePacket[5];
 					syncTimePacket[0] = SYNC_AP_CMD_SET_TIME_T;
 					memcpy(syncTimePacket + 1, g_syncTimestamp, 4);
 					uint8_t retries = 3;
 					smplStatus_t status = SMPL_NO_ACK;
-					while (retries-- && status == SMPL_NO_ACK)
+					while (retries-- && status != SMPL_SUCCESS)
 					{
 						status = SMPL_SendOpt(linkIdValue, syncTimePacket, 5, SMPL_TXOPTION_ACKREQ);
 					}
@@ -184,15 +202,14 @@ void simpliciti_main(void)
 					continue;
 				}
 
-				uint16_t* receivedPackets = linkId == 0 ? &receivedPacketsNode1 : &receivedPacketsNode2;
-
-				// Everything else just ejaculate out.
+				// Everything else just ejaculate out and pack in the headers.
 				BSP_TOGGLE_LED1();
-				(*receivedPackets)++;
-				ed_data[11] = (*receivedPackets & 0x00FF);
-				ed_data[12] = ((*receivedPackets & 0xFF00) >> 8);
 				ed_data[0] = linkIdValue;
-				justSendTheFuckingDataViaUsb(ed_data, packetLength + 1);
+				ed_data[1] = (*receivedPackets & 0x00FF);
+				ed_data[2] = ((*receivedPackets & 0xFF00) >> 8);
+				ed_data[3] = sRssi;
+				ed_data[4] = sFcsAndLqi;
+				justSendTheFuckingDataViaUsb(ed_data, packetLength + 5);
 			}
 		}
 
@@ -238,4 +255,10 @@ uint8_t sCB(linkID_t lid)
 
 	/* leave frame to be read by application. */
 	return 0;
+}
+
+void fillRxMetrics(int8_t rssi, uint8_t fcsAndLqi)
+{
+	sRssi = rssi;
+	sFcsAndLqi = fcsAndLqi;
 }

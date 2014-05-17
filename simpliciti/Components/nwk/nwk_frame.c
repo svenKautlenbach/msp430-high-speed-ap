@@ -83,6 +83,8 @@ static addr_t const *sMyAddr = NULL;
 
 static uint8_t  sMyRxType = 0, sMyTxType = 0;
 
+void fillRxMetrics(int8_t rssi, uint8_t fcsAndLqi);
+
 #if !defined(RX_POLLS)
 static uint8_t  (*spCallback)(linkID_t) = NULL;
 #endif
@@ -380,6 +382,11 @@ smplStatus_t nwk_retrieveFrame(rcvContext_t *rcv, uint8_t *msg, uint8_t *len, ad
         pCInfo->sigInfo.rssi = fPtr->mrfiPkt.rxMetrics[MRFI_RX_METRICS_RSSI_OFS];
         pCInfo->sigInfo.lqi  = fPtr->mrfiPkt.rxMetrics[MRFI_RX_METRICS_CRC_LQI_OFS];
       }
+      else
+      {
+    	  fillRxMetrics(fPtr->mrfiPkt.rxMetrics[MRFI_RX_METRICS_RSSI_OFS], fPtr->mrfiPkt.rxMetrics[MRFI_RX_METRICS_CRC_LQI_OFS]);
+      }
+
       if (srcAddr)
       {
         /* copy source address if requested */
