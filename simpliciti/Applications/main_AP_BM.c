@@ -196,7 +196,12 @@ void simpliciti_main(void)
 					smplStatus_t status = SMPL_NO_ACK;
 					while (retries-- && status != SMPL_SUCCESS)
 					{
-						status = SMPL_SendOpt(linkIdValue, syncTimePacket, 5, SMPL_TXOPTION_ACKREQ);
+						// Hack, send to everybody whoever would listen...
+						uint8_t devices = sNumCurrentPeers;
+						while (devices--)
+						{
+							status = SMPL_SendOpt(linkTable[devices], syncTimePacket, 5, SMPL_TXOPTION_ACKREQ);
+						}
 					}
 
 					continue;
