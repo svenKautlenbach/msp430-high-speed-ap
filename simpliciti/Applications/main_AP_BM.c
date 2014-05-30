@@ -141,51 +141,12 @@ void simpliciti_main(void)
 			}
 		}
 
-		/* Have we received a frame on one of the ED connections?
-		 * No critical section -- it doesn't really matter much if we miss a poll
-		 */
-		if (sPeerFrameSem)
+		if (sNumCurrentPeers > 0)
 		{
 			uint32_t linkId;
 			for (linkId = 0; linkId < sNumCurrentPeers; linkId++)
 			{
-				uint8_t packetLength;
-				linkID_t linkIdValue = linkTable[linkId];
-				// Continuously try to receive end device packets
-				if (SMPL_SUCCESS != SMPL_Receive(linkIdValue, ed_data + 1, &packetLength))
-				{
-					continue;
-				}
-
-				BSP_ENTER_CRITICAL_SECTION(intState);
-				sPeerFrameSem--;
-				BSP_EXIT_CRITICAL_SECTION(intState);
-
-				if (packetLength == 0 || packetLength > SIMPLICITI_MAX_PAYLOAD_LENGTH)
-				{
-					continue;
-				}
-
-				// Device wants the synchronization data
-				if (packetLength == 2 && ed_data[1] == SYNC_ED_TYPE_R2R && ed_data[2] == 0xCB)
-				{
-					uint8_t syncTimePacket[5];
-					syncTimePacket[0] = SYNC_AP_CMD_SET_TIME_T;
-					memcpy(syncTimePacket + 1, g_syncTimestamp, 4);
-					uint8_t retries = 3;
-					smplStatus_t status = SMPL_NO_ACK;
-					while (retries-- && status == SMPL_NO_ACK)
-					{
-						status = SMPL_SendOpt(linkIdValue, syncTimePacket, 5, SMPL_TXOPTION_ACKREQ);
-					}
-
-					continue;
-				}
-
-				// Everything else just ejaculate out.
-				BSP_TOGGLE_LED1();
-				ed_data[0] = linkIdValue;
-				justSendTheFuckingDataViaUsb(ed_data, packetLength + 1);
+				SMPL_SendOpt(linkTable[linkId], ed_data, 50, SMPL_TXOPTION_NONE);
 			}
 		}
 
